@@ -54,9 +54,7 @@ const io = require('socket.io')(2000, {
   
   app.use(cors());
   app.use(express.json());
-  console.log(process.env);
-  console.log(process.env.DB_PASSWORD);
-  console.log( String(process.env.DB_PASSWORD))
+
 
 app.get('/users/all',async(req,res)=>{
   try {
@@ -67,8 +65,8 @@ app.get('/users/all',async(req,res)=>{
     console.log(error.message)
   }
 })
-  //login endpoint
-  app.get('/users/login', async(req, res)=>{
+
+app.get('/users/login', async(req, res)=>{
     
    const {username, user_password} = req.query;
     try {
@@ -84,32 +82,97 @@ app.get('/users/all',async(req,res)=>{
   })
 
 
-//sign up
-  app.post('/users', async(req, res)=>{
-   const {username, user_password} = req.body;
-    try {
-      const existingUsers = (await pool.query("SELECT * FROM users where username = $1", [username]));
-      if(existingUsers.rows.length === 0){
-
-        const users = await pool.query('INSERT INTO users (id, username, user_password) values (default, $1,$2)', [username, user_password]);
-        console.log(users.rows)
-        return res.json(users.rows)
-      } 
-      return res.status(400).json({ message: "Username already exists" });
 
 
-    } catch (error) {
-      console.error('Error adding user:', error);
-      if (error.code === '23505') {
-        res.status(409).json({ error: 'user already exists' });
-      } else {
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    }
-  })
-//   app.listen(process.env.DB_PORT,()=>{
-//     console.log(`server has started on port ${process.env.DB_PORT} `);
-// })
+
+app.get('/groups/group_data', async(req,res)=>{
+  const {user_id} = req.query
+  try {
+    const groups_with_user = await pool.query(`
+      SELECT * FROM chat_groups 
+      JOIN group_members ON chat_groups.group_id = group_members.group_id 
+      WHERE group_members.user_id = $1
+  `, [user_id]);
+    console.log(groups_with_user.rows);
+    return res.json(groups_with_user.rows)
+}
+   catch (error) {
+    console.log(error.message)
+  }
+
+})
+
+
+///adding a user, getting that user ID as a return
+app.post('/users', async(req, res)=>{
+  const {username, user_password} = req.body;
+   try {
+     const existingUsers = (await pool.query(
+       `SELECT * FROM users
+        where username = $1`,
+         [username]));
+     if(existingUsers.rows.length === 0){
+
+       const users = await pool.query(
+         `INSERT INTO users (username, user_password) 
+         values ($1,$2) RETURNING id`,
+          [username, user_password]);
+       console.log(users.rows)
+       return res.json(users.rows)
+     } 
+     return res.status(400).json({ message: "Username already exists" });
+
+
+   } catch (error) {
+     console.error('Error adding user:', error);
+     if (error.code === '23505') {
+       res.status(409).json({ error: 'user already exists' });
+     } else {
+       res.status(500).json({ error: 'Internal server error' });
+     }
+   }
+ })
+
+/// adding a group chat, getting that chat ID as a return
+app.post('/groups', async(req,res)=>{
+  const {chat_name} = req.body
+  try {
+    const group_id= await pool.query(`
+      INSERT INTO chat_groups (group_name) 
+      VALUES ($1) 
+      RETURNING group_id
+  `, [chat_name]);
+    return res.status(200).json({ message: "group chat created", group_ID: `${group_id}` });
+  }
+   catch (error) {
+    
+    console.log(error.message)
+    return res.status(200).json({ message: "error in creating chat" });
+  }
+})
+
+///JOINT TABLE
+app.post('/groups/group_member', async(req,res)=>{
+  const {user_ID, group_ID} = req.body
+  try {
+    await pool.query(`
+      INSERT INTO group_members (group_id, user_id) 
+      VALUES ($1,$2)
+  `, [group_ID,user_ID]);
+    return res.status(200).json({ message: "Added user to group" });
+  }
+   catch (error) {
+    
+    console.log(error.message)
+    return res.status(200).json({ message: "error in adding member to group" });
+  }
+})
+
 app.listen(1000,()=>{
   console.log(`server has started on port ${1000} `);
 })
+//sign up
+
+//   app.listen(process.env.DB_PORT,()=>{
+//     console.log(`server has started on port ${process.env.DB_PORT} `);
+// })
