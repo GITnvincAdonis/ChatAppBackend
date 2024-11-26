@@ -97,7 +97,7 @@ app.get('/groups/group_data', async(req,res)=>{
     return res.json(groups_with_user.rows)
 }
    catch (error) {
-    console.log(error.message)
+    console.log(error.code)
   }
 
 })
@@ -115,10 +115,10 @@ app.post('/users', async(req, res)=>{
 
        const users = await pool.query(
          `INSERT INTO users (username, user_password) 
-         values ($1,$2) RETURNING id`,
+         values ($1,$2) RETURNING user_id`,
           [username, user_password]);
-       console.log(users.rows)
-       return res.json(users.rows)
+       console.log(users.rows[0])
+       return res.json(users.rows[0])
      } 
      return res.status(400).json({ message: "Username already exists" });
 
@@ -135,36 +135,48 @@ app.post('/users', async(req, res)=>{
 
 /// adding a group chat, getting that chat ID as a return
 app.post('/groups', async(req,res)=>{
-  const {chat_name} = req.body
+  const {chat_name,chat_password} = req.body
   try {
+    console.log(req.body)
     const group_id= await pool.query(`
-      INSERT INTO chat_groups (group_name) 
-      VALUES ($1) 
+      INSERT INTO chat_groups (group_name,chat_password) 
+      VALUES ($1,$2) 
       RETURNING group_id
-  `, [chat_name]);
-    return res.status(200).json({ message: "group chat created", group_ID: `${group_id}` });
+  `, [chat_name,chat_password]);
+    return res.status(200).json({ message: "group chat created", group_ID: group_id.rows[0]});
   }
    catch (error) {
     
     console.log(error.message)
-    return res.status(200).json({ message: "error in creating chat" });
+    return res.status(400).json({ message: "error in creating chat" });
   }
 })
 
 ///JOINT TABLE
 app.post('/groups/group_member', async(req,res)=>{
-  const {user_ID, group_ID} = req.body
-  try {
-    await pool.query(`
+  const {user_id, group_id} = req.body
+  console.log('Received:', user_id, group_id);
+
+// Validate UUID format using a simple regex or library (like `uuid` npm package)
+const isValidUUID = (id) => {
+  const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return regex.test(id);
+};
+
+if (!isValidUUID(group_id) || !isValidUUID(user_id)) {
+  return res.status(400).json({ message: 'Invalid UUID format for group_id or user_id' });
+}
+try {
+    const addedMember = await pool.query(`
       INSERT INTO group_members (group_id, user_id) 
-      VALUES ($1,$2)
-  `, [group_ID,user_ID]);
-    return res.status(200).json({ message: "Added user to group" });
+      VALUES ($1,$2) RETURNING group_members
+  `, [group_id,user_id]);
+    return res.status(200).json({ message: "Added user to group", data:addedMember.rows[0]  });
   }
    catch (error) {
     
     console.log(error.message)
-    return res.status(200).json({ message: "error in adding member to group" });
+    return res.status(400).json({ message: "error in adding member to group" });
   }
 })
 
