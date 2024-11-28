@@ -1,18 +1,36 @@
+require('dotenv').config();
 const pool = require("../db/DB");
+const jwt = require('jsonwebtoken')
+
+
+
+
 const loginUser = async(req, res)=>{
     
-    const {username, user_password} = req.query;
-     try {
-       const users = await pool.query('SELECT * FROM users where username = $1 AND user_password = $2',[username,user_password]);
-       if (users.rowCount > 0) {
-         return res.status(200).json({ message: 'Login successful', user: users.rows[0] });
-       } else {
-         return res.status(401).json({ message: 'Invalid credentials' });
-       }
-     } catch (error) {
-       console.log(error.message)
-     }
-   }
+  const {username, user_password} = req.body;
+  console.log(`Request Body: ${JSON.stringify(req.body)}`);
+    try {
+      const users = await pool.query(
+        `SELECT * FROM users
+         where username = $1 
+         AND user_password = $2`,
+         [username,user_password]);
+
+      if (users.rowCount > 0) {
+        console.log(users.rows)
+         jwt.sign({user:users.rows[0]},process.env.JWT_SECRET,
+          (err, token)=>{
+            if(err)  req.sendStatus(403)
+            else res.json({message:"successful login",token})
+          });
+        }
+      else res.status(403).json({ message: 'Invalid credentials' });
+      
+    } catch (error) {
+      console.log(error)
+    }
+    
+}
 
 const SignInUser = async(req, res)=>{
     const {username, user_password} = req.body;
@@ -28,9 +46,13 @@ const SignInUser = async(req, res)=>{
            values ($1,$2) RETURNING user_id, username`,
             [username, user_password]);
          console.log(users.rows[0])
-         return res.json(users.rows[0])
+         jwt.sign({user:users.rows[0]},process.env.JWT_SECRET, (err,token)=>{
+          if(err) res.sendStatus(403);
+          else res.json({message:"sign in successful", token})
+         })
+        
        } 
-       return res.status(400).json({ message: "Username already exists" });
+    
   
   
      } catch (error) {
@@ -42,5 +64,17 @@ const SignInUser = async(req, res)=>{
        }
      }
    }
-   
-module.exports = { loginUser,SignInUser };
+
+
+const DataRetrieveVIAToken = async(req, res)=>{
+  console.log(req.token)
+  jwt.verify(req.token,process.env.JWT_SECRET, (err,authData)=>{
+    
+    if(err) res.sendStatus(403);
+    else{
+      console.log(authData) 
+      res.json({message:"sign in successful", authData});
+  }})
+}
+console.log(`${process.env.JWT_SECRET}`)
+module.exports = { loginUser,SignInUser,DataRetrieveVIAToken };

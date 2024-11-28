@@ -22,21 +22,21 @@ app.get('/users/all',async(req,res)=>{
     console.log(error.message)
   }
 })
+const { ValidateToken } = require("./UTILS/ValidateToken");
 
-
-const {loginUser,SignInUser} = require('./controllers/authFunctions')
-app.get('/users/login', loginUser )
-app.post('/users', SignInUser )
-
+const {loginUser,SignInUser, DataRetrieveVIAToken} = require('./controllers/authFunctions')
+app.post('/api/login', loginUser )
+app.post('/api/signin', SignInUser )
+app.post('/api/token', ValidateToken, DataRetrieveVIAToken )
 
 const {UserChatGroups,Registergroup, GetGroupID} = require('./controllers/chatGroupFunctions')
-app.get('/groups/group_data', UserChatGroups )
-app.post('/groups', Registergroup)
-app.post('/groups/single_group_id', GetGroupID );
+app.post('/groups/group_data',ValidateToken, UserChatGroups )
+app.post('/groups',ValidateToken, Registergroup)
+app.post('/groups/single_group_id',ValidateToken, GetGroupID );
 
 
 const { CreateGroupMember } = require('./controllers/GroupMemberFunctions');
-app.post('/groups/group_member', CreateGroupMember);
+app.post('/groups/group_member',ValidateToken, CreateGroupMember);
 
 
 const { GetMessages, CreateMessage } = require("./controllers/messageFunctions");
@@ -47,6 +47,8 @@ app.post('/messages',CreateMessage )
 app.listen(1000,()=>{
   console.log(`server has started on port ${1000} `);
 })
+
+
 //sign up
 
 //   app.listen(process.env.DB_PORT,()=>{
