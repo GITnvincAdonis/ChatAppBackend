@@ -67,14 +67,11 @@ const SignInUser = async(req, res)=>{
 
 
 const DataRetrieveVIAToken = async(req, res)=>{
-  console.log(req.token)
+ 
   jwt.verify(req.token,process.env.JWT_SECRET, (err,authData)=>{
     
     if(err) res.sendStatus(403);
-    else{
-      console.log(authData) 
-      res.json({message:"sign in successful", authData});
-  }})
+    else res.json({message:"sign in successful", authData})
+  })
 }
-console.log(`${process.env.JWT_SECRET}`)
 module.exports = { loginUser,SignInUser,DataRetrieveVIAToken };
