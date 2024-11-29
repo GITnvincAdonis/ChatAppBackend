@@ -35,9 +35,9 @@ app.post('/groups',ValidateToken, Registergroup)
 app.post('/groups/single_group_id',ValidateToken, GetGroupID );
 
 
-const { CreateGroupMember } = require('./controllers/GroupMemberFunctions');
+const { CreateGroupMember, GroupMembers } = require('./controllers/GroupMemberFunctions');
 app.post('/groups/group_member',ValidateToken, CreateGroupMember);
-
+app.post('/groups/get_group_members',ValidateToken, GroupMembers);
 
 const { GetMessages, CreateMessage } = require("./controllers/messageFunctions");
 app.get('/messages',GetMessages )
