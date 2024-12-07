@@ -13,14 +13,13 @@ function SetupSocket(){
             try {
               const newMessage = await pool.query(
                `INSERT INTO messages (message_string, group_id, user_id)
-               values ($1,$2,$3) RETURNING message_id
+               values ($1,$2,$3) RETURNING message_id,message_senddate
                `,[text,grp_ID,user_ID]);
 
               console.log("New message id:", newMessage.rows[0]);
 
               await socket.to(roomName).emit("send-to-client", { text});
-              
-              cb("server callback")
+              await cb({message:"server callback",data:newMessage.rows[0]})
            
             } catch (error) {
               console.log(error)
