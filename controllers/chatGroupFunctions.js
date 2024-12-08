@@ -55,24 +55,25 @@ const Registergroup  = async(req,res)=>{
     }
 }
 const GetGroupID = async (req, res) => {
-    const { group_name, chat_password } = req.body;
+    const { group_name, chat_password,grp_ID } = req.body;
+    console.log(`${JSON.stringify(req.body)}`);
   
-    if (!group_name || !chat_password) {
-      return res.status(400).json({ error: "Missing required parameters" });
+    if (!isValidUUID(grp_ID) ) {
+      return res.status(404).json({ message: 'Invalid UUID format for group_id' });
     }
     try {
       const groups_with_user = await pool.query(`
         SELECT group_id FROM chat_groups 
-        WHERE group_name = $1 AND chat_password = $2
-      `, [group_name, chat_password]);
+        WHERE group_name = $1 AND chat_password = $2 and group_id = $3
+      `, [group_name, chat_password, grp_ID]);
   
       if (groups_with_user.rows.length === 0) {
         console.log("Group not found");
-        return res.status(404).json();
+        return res.status(404).json({message: 'Group not found'})
       }
       jwt.verify(req.token, process.env.JWT_SECRET, (err, authData)=>{
         if(err) res.sendStatus(403);
-        else res.json({message: 'Group found', group_ID: groups_with_user.rows[0].group_id})
+        else res.json({message: 'Group found', group_ID: groups_with_user.rows[0]})
       })
      
     } catch (error) {
