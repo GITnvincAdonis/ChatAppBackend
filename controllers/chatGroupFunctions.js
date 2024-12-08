@@ -6,9 +6,6 @@ const {ValidUUID:isValidUUID} = require('../UTILS/ValidateUUID')
 
 const UserChatGroups = async (req, res) => {
   const { userID } = req.body;
-  console.log(`Request Body: ${JSON.stringify(req.body)}`);
-  console.log(`User ID: ${userID}`);
-
  
   if (!isValidUUID(userID) ) {
     return res.status(400).json({ message: 'Invalid UUID format for group_id or user_id' });
@@ -20,11 +17,7 @@ const UserChatGroups = async (req, res) => {
       JOIN group_members ON chat_groups.group_id = group_members.group_id 
       WHERE group_members.user_id = $1
     `, [userID]);
-
-    console.log(groups_with_user.rows);
-
     try {
-      console.log(req.token)
       jwt.verify(req.token, process.env.JWT_SECRET, (err, authData) => {
         if (err) {
           return res.sendStatus(403); // Invalid token
@@ -45,7 +38,6 @@ const UserChatGroups = async (req, res) => {
 const Registergroup  = async(req,res)=>{
     const {chat_name,chat_password} = req.body
     try {
-      console.log(req.body)
       const group_id= await pool.query(`
         INSERT INTO chat_groups (group_name,chat_password) 
         VALUES ($1,$2) 
@@ -68,9 +60,6 @@ const GetGroupID = async (req, res) => {
     if (!group_name || !chat_password) {
       return res.status(400).json({ error: "Missing required parameters" });
     }
-  
-    console.log(`Request body: ${JSON.stringify(req.body)}`);
-  
     try {
       const groups_with_user = await pool.query(`
         SELECT group_id FROM chat_groups 

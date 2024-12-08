@@ -28,8 +28,7 @@ const CreateGroupMember = async (req, res) => {
 
 const GroupMembers = async (req, res) => {
   const { group_id } = req.body;
-  console.log(`Request Body: ${JSON.stringify(req.body)}`);
-  console.log(`User ID: ${group_id}`);
+ 
 
  
   if (!isValidUUID( group_id) ) {
@@ -43,10 +42,10 @@ const GroupMembers = async (req, res) => {
       WHERE group_members.group_id = $1
     `, [group_id]);
 
-    console.log(users_in_groups.rows);
+    
 
     try {
-      console.log(req.token)
+     
       jwt.verify(req.token, process.env.JWT_SECRET, (err, authData) => {
         if (err) {
           return res.sendStatus(403); // Invalid token

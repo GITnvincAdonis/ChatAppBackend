@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken')
 const loginUser = async(req, res)=>{
     
   const {username, user_password} = req.body;
-  console.log(`Request Body: ${JSON.stringify(req.body)}`);
     try {
       const users = await pool.query(
         `SELECT * FROM users
@@ -17,7 +16,7 @@ const loginUser = async(req, res)=>{
          [username,user_password]);
 
       if (users.rowCount > 0) {
-        console.log(users.rows)
+     
          jwt.sign({user:users.rows[0]},process.env.JWT_SECRET,
           (err, token)=>{
             if(err)  req.sendStatus(403)
@@ -45,7 +44,6 @@ const SignInUser = async(req, res)=>{
            `INSERT INTO users (username, user_password) 
            values ($1,$2) RETURNING user_id, username`,
             [username, user_password]);
-         console.log(users.rows[0])
          jwt.sign({user:users.rows[0]},process.env.JWT_SECRET, (err,token)=>{
           if(err) res.sendStatus(403);
           else res.json({message:"sign in successful", token})

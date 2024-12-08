@@ -4,7 +4,6 @@ const {ValidUUID:isValidUUID} = require('../UTILS/ValidateUUID');
 
 const GetMessages = async (req,res)=>{
   const {group_id} = req.query
-  console.log(`messages get: ${req.query}`)
   if (!isValidUUID(group_id)) {
     return res.status(400).json({ message: 'Invalid UUID format for group_id ' });
   }

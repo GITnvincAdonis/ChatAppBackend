@@ -1,4 +1,5 @@
 const pool = require("../db/DB");
+const jwt = require('jsonwebtoken')
 function SetupSocket(){
     const io = require('socket.io')(2000, {
         cors: {
@@ -9,7 +10,10 @@ function SetupSocket(){
       io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
      
-        socket.on("send-to-server", async({ roomName, text,grp_ID,user_ID },cb) => {
+        socket.on("send-to-server", async(frontendData,cb) => {
+          const {roomName, text,grp_ID,user_ID,authToken } = frontendData;
+          jwt.verify(authToken, process.env.JWT_SECRET, async (err, decoded) => {
+            if (err) return cb({message:"Invalid token",data:null});
             try {
               const newMessage = await pool.query(
                `INSERT INTO messages (message_string, group_id, user_id)
@@ -24,6 +28,8 @@ function SetupSocket(){
             } catch (error) {
               console.log(error)
             }
+          }) 
+        
             
         });
     
